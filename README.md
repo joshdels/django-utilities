@@ -15,6 +15,7 @@ techstack
   - jwt authentication
   - routers api endpoints
 2. nextjs
+  - tailwind prettier
 3. maplibre
 
 ---

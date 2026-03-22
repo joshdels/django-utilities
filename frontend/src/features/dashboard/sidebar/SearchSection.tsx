@@ -11,7 +11,7 @@ export default function SearchPanel() {
   };
 
   return (
-    <div className="m-5 flex items-center w-[30vw] bg-white shadow-md rounded-md overflow-hidden text-black">
+    <div className="m-5 flex w-[30vw] items-center overflow-hidden rounded-md bg-white text-black shadow-md">
       <input
         type="text"
         placeholder="Search by Parcel ID"
@@ -22,9 +22,9 @@ export default function SearchPanel() {
 
       <button
         onClick={handleSearch}
-        className="bg-blue-500 hover:bg-blue-600 text-black px-3 py-2 flex items-center justify-center cursor-pointer"
+        className="flex cursor-pointer items-center justify-center bg-blue-500 px-3 py-2 text-black hover:bg-blue-600"
       >
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+        <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
           <path d={search24} />
         </svg>
       </button>

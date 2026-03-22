@@ -23,12 +23,12 @@ export default function Navigation() {
       {navigations.map((nav, index) => (
         <div
           key={index}
-          className="flex flex-col items-center cursor-pointer hover:text-blue-600"
+          className="flex cursor-pointer flex-col items-center hover:text-blue-600"
         >
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
             <path d={nav.icon} />
           </svg>
-          <span className="text-sm mt-1">{nav.label}</span>
+          <span className="mt-1 text-sm">{nav.label}</span>
         </div>
       ))}
     </div>

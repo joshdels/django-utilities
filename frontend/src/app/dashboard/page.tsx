@@ -5,7 +5,7 @@ import MapNavbar from "@/features/dashboard/navbar/MapNavbar";
 
 export default function Project() {
   return (
-    <div className="h-screen flex flex-col">
+    <div className="flex h-screen flex-col">
       <MapNavbar />
 
       <div className="relative flex-1">

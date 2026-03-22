@@ -23,13 +23,13 @@ export default function SideBar() {
       {navigations.map((nav) => (
         <div
           key={nav.label}
-          className="flex flex-col items-center gap-1 p-3 cursor-pointer hover:bg-blue-500 rounded-md"
+          className="flex cursor-pointer flex-col items-center gap-1 rounded-md p-3 hover:bg-blue-500"
         >
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
             <path d={nav.icon} />
           </svg>
 
-          <span className="font-medium text-black text-sm ">{nav.label}</span>
+          <span className="text-sm font-medium text-black">{nav.label}</span>
         </div>
       ))}
     </div>

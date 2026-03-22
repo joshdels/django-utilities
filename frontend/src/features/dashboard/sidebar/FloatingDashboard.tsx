@@ -1,29 +1,25 @@
 import { x24 } from "@esri/calcite-ui-icons";
 import SideBar from "./SideBar";
 
-
-
 export default function FloatingDashboard() {
   return (
-    <div className="bg-white text-black m-5 w-[30vw] h-[80vh] rounded-lg flex flex-row gap-5">
-      <aside className="w-[20%] bg-gray-200 p-3 rounded-lg">
+    <div className="m-5 flex h-[80vh] w-[30vw] flex-row gap-5 rounded-lg bg-white text-black">
+      <aside className="w-[20%] rounded-lg bg-gray-200 p-3">
         <SideBar />
       </aside>
 
-      <main className="flex-1 bg-white p-3 rounded-lg">
-        <section className="flex flex-row justify-between mb-5">
+      <main className="flex-1 rounded-lg bg-white p-3">
+        <section className="mb-5 flex flex-row justify-between">
           <h1 className="text-2xl font-black">Parcel Overview</h1>
           <div className="flex flex-row items-center">
             <div className="cursor-pointer hover:text-blue-600">
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
                 <path d={x24} />
               </svg>
             </div>
           </div>
         </section>
-        <section>
-          {/* <OwnerInformation /> */}
-        </section>
+        <section>{/* <OwnerInformation /> */}</section>
       </main>
     </div>
   );
