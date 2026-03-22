@@ -3,9 +3,10 @@
 This will be the water utilities projects. This aligns engineering projects into usable and scalable systems
 this will turn the CAD files, georeference it then deploy on
 WebGIS
+
 ---
 
-##Methods
+## Methods
 This project follows the AGILE methodology to allow iterative development and flexibility.
 
 techstack
@@ -18,7 +19,7 @@ techstack
 
 ---
 
-### gettings started
+### Gettings started
 
 For testing please make it ensure you have a postgres installed with postgis enabled
 
