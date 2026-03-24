@@ -6,9 +6,8 @@ from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-ENV_BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-load_dotenv(os.path.join(ENV_BASE_DIR, ".env.local"))
+load_dotenv(os.path.join(BASE_DIR, ".env.local"))
 
 
 SECRET_KEY = os.getenv("PROJECT_KEY")
@@ -49,6 +48,7 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://next-utilities-map.vercel.app",
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -133,3 +133,5 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media") 

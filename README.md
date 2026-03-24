@@ -1,9 +1,7 @@
 # django-next-ts-water-utilities
 
-This will be the water utilities projects. This aligns engineering projects into usable and scalable systems
-this will turn the CAD files, georeference it then deploy on
-WebGIS
-
+This project is designed to manage water utilities engineering projects, transforming CAD files into georeferenced data and deploying them on a WebGIS platform.
+ It aims to provide a scalable, maintainable system for utilities management.
 ---
 
 ## Methods
@@ -14,9 +12,7 @@ techstack
 1. django rest-framework
   - jwt authentication
   - routers api endpoints
-2. nextjs
-  - tailwind prettier
-3. maplibre
+
 
 ---
 
@@ -32,8 +28,3 @@ python migrate
 python manage.py runserver
 ```
 
-```
-cd frontend
-npm install
-npm run dev
-```
