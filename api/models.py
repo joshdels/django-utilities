@@ -49,6 +49,7 @@ class Asset(models.Model):
 class Node(models.Model):
     asset = models.OneToOneField(Asset, on_delete=models.CASCADE, related_name="node")
     geometry = models.PointField(null=True, blank=True)
+    properties = models.JSONField(blank=True, null=True)
 
     def __str__(self):
         return f"Node: {self.asset.name if self.asset else 'Unnamed'}"
