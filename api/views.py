@@ -9,9 +9,6 @@ from .serializers import (
 )
 
 
-
-
-
 class ProjectViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = ProjectSerializer

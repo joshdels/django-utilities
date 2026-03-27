@@ -23,7 +23,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             logo=validated_data.get("logo", None),
             owner=request.user if request.user.is_authenticated else None,
         )
-        files_data = request.FILES.getlist("files")
+        files_data = request.FILES.getlist("file")
         for file in files_data:
             ProjectFile.objects.create(project=project, file=file, name=file.name)
 
