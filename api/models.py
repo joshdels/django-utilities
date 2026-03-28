@@ -13,16 +13,18 @@ class Project(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255, blank=True)
     description = models.CharField(max_length=500, blank=True)
-    utility_type = models.CharField(max_length=100, choices=UTILITY_TYPE)
+    utility_type = models.CharField(
+        max_length=100, choices=UTILITY_TYPE, null=True, blank=True
+    )
     logo = models.ImageField(upload_to="logos/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.name or f"Project {self.id}"
+
 
 class ProjectFile(models.Model):
-    project = models.ForeignKey(
-        Project,
-        on_delete=models.CASCADE,
-    )
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="files")
     name = models.CharField(max_length=255, null=True, blank=True)
     file = models.FileField(upload_to="project_files/")
 
@@ -39,7 +41,9 @@ class Asset(models.Model):
         ("tvalve", "T-Valve"),
     ]
 
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, db_index=True)
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, db_index=True, related_name="assets"
+    )
     asset_type = models.CharField(max_length=20, choices=ASSET_TYPE)
     name = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=50, default="active")
@@ -51,14 +55,14 @@ class Asset(models.Model):
 
 class Node(models.Model):
     asset = models.OneToOneField(Asset, on_delete=models.CASCADE, related_name="node")
-    geometry = models.PointField(null=True, blank=True)
+    geometry = models.PointField(null=True, blank=True, srid=4326)
     node_name = models.CharField(max_length=255, null=True, blank=True)
     node_type = models.CharField(max_length=100, null=True, blank=True)
     properties = models.JSONField(blank=True, null=True)
     elevation = models.FloatField(null=True, blank=True)
 
     def __str__(self):
-        return f"Node: {self.asset.name if self.asset else 'Unnamed'}"
+        return self.node_name or f"Node of {self.asset.name}"
 
 
 class Line(models.Model):
@@ -77,7 +81,7 @@ class Line(models.Model):
         null=True,
         blank=True,
     )
-    geometry = models.LineStringField(null=True, blank=True)
+    geometry = models.LineStringField(null=True, blank=True, srid=4326)
     line_name = models.CharField(max_length=255, null=True, blank=True)
     line_type = models.CharField(max_length=50, null=True, blank=True)
     material = models.CharField(max_length=50, blank=True)
@@ -85,4 +89,4 @@ class Line(models.Model):
     properties = models.JSONField(blank=True, null=True)
 
     def __str__(self):
-        return f"Line: {self.asset.name if self.asset else 'Unnamed'}"
+        return self.line_name or f"Line of {self.asset.name}"

@@ -1,11 +1,11 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import Project, ProjectFile, Asset, Node, Pipe
+from .models import Project, ProjectFile, Asset, Node, Line
 from .serializers import (
     ProjectSerializer,
     AssetSerializer,
     NodeSerializer,
-    PipeSerializer,
+    LineSerializer,
 )
 
 
@@ -38,10 +38,10 @@ class NodeViewSet(viewsets.ModelViewSet):
         return Node.objects.filter(asset__project__owner=user)
 
 
-class PipeViewSet(viewsets.ModelViewSet):
+class LineViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
-    serializer_class = PipeSerializer
+    serializer_class = LineSerializer
 
     def get_queryset(self):
         user = self.request.user
-        return Pipe.objects.filter(asset__project__owner=user)
+        return Line.objects.filter(asset__project__owner=user)

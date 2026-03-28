@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, ProjectFile, Asset, Node, Pipe
+from .models import Project, ProjectFile, Asset, Node, Line
 
 
 class ProjectFileSerializer(serializers.ModelSerializer):
@@ -50,7 +50,7 @@ class NodeSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class PipeSerializer(serializers.ModelSerializer):
+class LineSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Pipe
+        model = Line
         fields = "__all__"
