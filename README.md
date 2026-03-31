@@ -21,7 +21,7 @@ techstack
 ### Gettings started
 For testing please make it ensure you have a postgres installed with postgis enabled
 
-Ensure your .env file looks like this
+Ensure your .env.local   file looks like this
 ```
 PROJECT_KEY="django-project-key"
    

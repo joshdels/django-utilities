@@ -1,37 +1,41 @@
 from rest_framework import serializers
-from .models import Project, ProjectFile, Asset, Node, Pipe
+from .models import Project, ProjectFile, Asset, Node, Line
 
 
 class ProjectFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectFile
         fields = "__all__"
-
-    def create(self, validated_data):
-        request = self.context.get("request")
-        files_data = request.FILES.getlist("files")
-
-        logo = validated_data.get("logo", None)
-
-        project = Project.objects.create(
-            name=validated_data.get("name"),
-            logo=logo,
-            owner=request.user if request.user.is_authenticated else None,
-        )
-
-        for file in files_data:
-            ProjectFile.objects.create(project=project, file=file)
-
-        return project
+        read_only_fields = ["id"]
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    files = ProjectFileSerializer(many=True, required=False)
-
     class Meta:
         model = Project
         fields = "__all__"
-        read_only_fields = ("owner",)
+        read_only_fields = ["id", "created_at", "owner"]
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        project = Project.objects.create(
+            name=validated_data.get("name", ""),
+            description=validated_data.get("description", ""),
+            logo=validated_data.get("logo", None),
+            owner=request.user if request.user.is_authenticated else None,
+        )
+        files_data = request.FILES.getlist("file")
+        for file in files_data:
+            ProjectFile.objects.create(project=project, file=file, name=file.name)
+
+        return project
+
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get("name", instance.name)
+        instance.description = validated_data.get("description", instance.description)
+        if validated_data.get("logo") is not None:
+            instance.logo = validated_data.get("logo")
+        instance.save()
+        return instance
 
 
 class AssetSerializer(serializers.ModelSerializer):
@@ -46,7 +50,7 @@ class NodeSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class PipeSerializer(serializers.ModelSerializer):
+class LineSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Pipe
+        model = Line
         fields = "__all__"
