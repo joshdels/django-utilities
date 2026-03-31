@@ -36,6 +36,7 @@ DB_PASSWORD="your-password"
 DB_HOST="db-connected-to"
 DB_PORT="port"
 
+
 CORS_URL="your-frontend-url"
 
 ```
