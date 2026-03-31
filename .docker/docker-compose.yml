@@ -1,11 +1,11 @@
 services:
   web:
     build:
-      context: ..
+      context: ../
       dockerfile: .docker/Dockerfile
     container_name: django-utilities
     env_file:
-      - ../.env.prod
+      - .env.prod
     ports:
       - "8003:8000"
     restart: unless-stopped
