@@ -3,19 +3,10 @@ from django.contrib.auth.models import User
 
 
 class Project(models.Model):
-    UTILITY_TYPE = [
-        ("water", "Water"),
-        ("electricity", "Electricity"),
-        ("irrigation", "Irrigation"),
-        ("sewerage", "Sewerage"),
-    ]
-
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255, blank=True)
     description = models.CharField(max_length=500, blank=True)
-    utility_type = models.CharField(
-        max_length=100, choices=UTILITY_TYPE, null=True, blank=True
-    )
+    utility_type = models.CharField(max_length=100, null=True, blank=True)
     logo = models.ImageField(upload_to="logos/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
