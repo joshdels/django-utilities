@@ -80,8 +80,7 @@ def dxf_to_dataframe(doc: ezdxf.document.Drawing) -> gpd.GeoDataFrame:
 
 def extract_to_geopackage(
     file_path: str,
-    output_dir: str = "output",
-    output_name: str = "utilities.gpkg",
+    output_path: str,
     crs: str = "EPSG:26910",
 ) -> Optional[pathlib.Path]:
     """
@@ -110,9 +109,7 @@ def extract_to_geopackage(
             return None
 
         gdf.crs = crs
-        out_dir = pathlib.Path(output_dir)
-        out_dir.mkdir(parents=True, exist_ok=True)
-        out_path = out_dir / output_name
+        out_path = pathlib.Path(output_path)
 
         gdf.to_file(out_path, layer="entities", driver="GPKG")
         logger.info(f"Successfully exported to {out_path.resolve()}")
