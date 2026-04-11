@@ -4,23 +4,18 @@ from ezdxf.units import unit_name
 from datetime import datetime
 import logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%H:%M:%S",
-)
 logger = logging.getLogger(__name__)
 
 
 def get_dxf_metadata(doc, msp) -> dict:
-    """Extracts raw info. No printing, no saving. Just data."""
     geodata = msp.get_geodata()
     epsg = "N/A"
+
     if geodata:
         try:
             code, _ = geodata.get_crs()
             epsg = f"EPSG:{code}"
-        except:
+        except Exception:
             epsg = "Unknown CRS"
 
     layers_by_type = {}
@@ -37,10 +32,9 @@ def get_dxf_metadata(doc, msp) -> dict:
 
 
 def format_text_report(filename: str, data: dict) -> str:
-    """Turns the data dictionary into a pretty string."""
     report = [
         "=" * 50,
-        f"INFRALENS (TopMap Solutions) REPORT ",
+        "INFRALENS (TopMap Solutions) REPORT",
         "=" * 50,
         f"Generated : {data['timestamp']}",
         f"File Name : {filename}",
@@ -58,29 +52,28 @@ def format_text_report(filename: str, data: dict) -> str:
 
 
 def run_inspection(file_path: str, original_name: str = None) -> str:
-    """
-    Inspect DXF and return report text
-    """
-    logger.info("Running Inspection of the File, Please Wait")
+    logger.info("Running DXF inspection...")
+
     path = pathlib.Path(file_path).resolve()
 
     if not path.exists():
         logger.error(f"File missing: {path}")
-        return
+        raise FileNotFoundError(f"File missing: {path}")
 
     try:
         size_bytes = path.stat().st_size
         size_mb = size_bytes / (1024 * 1024)
 
+        # Load DXF
         doc = ezdxf.readfile(path)
-        raw_data = get_dxf_metadata(doc, doc.modelspace())
 
+        raw_data = get_dxf_metadata(doc, doc.modelspace())
         raw_data["file_size_mb"] = f"{size_mb:.2f} MB"
 
         filename = original_name if original_name else path.name
 
-        report_text = format_text_report(filename, raw_data)
-        return report_text
+        return format_text_report(filename, raw_data)
 
     except Exception as e:
-        logger.error(f"Failed to process {path.name}: {e}")
+        logger.exception(f"Failed to process {path.name}")
+        raise RuntimeError(f"DXF inspection failed: {e}")

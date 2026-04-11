@@ -3,28 +3,16 @@ import geopandas as gpd
 import pathlib
 import logging
 from shapely.geometry import Point, LineString, Polygon
-from typing import Optional, List, Dict, Any
+from typing import Optional
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%H:%M:%S",
-)
 logger = logging.getLogger(__name__)
 
 
 def parse_entity(entity) -> Optional[object]:
-    """
-    Universal parser for DXF entities:
-    - POINT / INSERT -> Point
-    - LINE -> LineString
-    - LWPOLYLINE -> Polygon if closed, else LineString
-    - HATCH -> Polygon
-    """
     etype = entity.dxftype()
 
     try:
-        if etype == "POINT" or etype == "INSERT":
+        if etype in ["POINT", "INSERT"]:
             coords = entity.dxf.insert if etype == "INSERT" else entity.dxf.location
             return Point(coords.x, coords.y)
 
@@ -42,25 +30,24 @@ def parse_entity(entity) -> Optional[object]:
                 return Polygon(points)
             elif len(points) > 1:
                 return LineString(points)
-            else:
-                return None
 
         elif etype == "HATCH":
-            if entity.paths:
-                path = entity.paths[0]
-                points = [(pt[0], pt[1]) for pt in path.vertices]
-                if len(points) >= 3:
-                    return Polygon(points)
-            return None
+            try:
+                for path in entity.paths:
+                    if hasattr(path, "vertices"):
+                        points = [(pt[0], pt[1]) for pt in path.vertices]
+                        if len(points) >= 3:
+                            return Polygon(points)
+            except Exception:
+                return None
 
-        else:
-            return None
+        return None
 
-    except AttributeError:
+    except Exception:
         return None
 
 
-def dxf_to_dataframe(doc: ezdxf.document.Drawing) -> gpd.GeoDataFrame:
+def dxf_to_dataframe(doc) -> gpd.GeoDataFrame:
     msp = doc.modelspace()
     rows = []
 
@@ -75,47 +62,38 @@ def dxf_to_dataframe(doc: ezdxf.document.Drawing) -> gpd.GeoDataFrame:
                 }
             )
 
-    return gpd.GeoDataFrame(rows)
+    return gpd.GeoDataFrame(rows, geometry="geometry")
 
 
 def extract_to_geopackage(
     file_path: str,
     output_path: str,
-    crs: str = "EPSG:26910",
-) -> Optional[pathlib.Path]:
-    """
-    Return a process conversion from dxf to geopackage
-    Ready for use for the analyst
-
-    Example:
-    - extract_to_geopackage("../data/sample.dxf", "../data/gis_data")"""
-
-    logger.info("Extracting the DXF to GIS, Please Wait")
+    crs: str = "EPSG:4326",
+):
+    logger.info("Extracting DXF to GeoPackage...")
 
     input_path = pathlib.Path(file_path)
 
     if not input_path.exists() or input_path.suffix.lower() != ".dxf":
-        logger.error(f"Invalid file path or format: {file_path}")
-        return None
+        raise FileNotFoundError(f"Invalid DXF file: {file_path}")
 
     try:
         doc = ezdxf.readfile(file_path)
 
-        logger.info(f"Extracting geometry from {input_path.name}...")
         gdf = dxf_to_dataframe(doc)
 
         if gdf.empty:
-            logger.warning("No valid geometry found in Modelspace.")
-            return None
+            raise ValueError("No valid geometry found in DXF")
 
-        gdf.crs = crs
+        gdf.set_crs(crs, inplace=True)
+
         out_path = pathlib.Path(output_path)
-
         gdf.to_file(out_path, layer="entities", driver="GPKG")
-        logger.info(f"Successfully exported to {out_path.resolve()}")
+
+        logger.info(f"Exported to {out_path.resolve()}")
 
         return out_path
 
     except Exception as e:
-        logger.error(f"Critical failure: {e}")
-        return None
+        logger.exception("DXF conversion failed")
+        raise RuntimeError(f"DXF conversion failed: {e}")

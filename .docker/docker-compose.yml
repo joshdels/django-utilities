@@ -11,6 +11,8 @@ services:
     restart: unless-stopped
     networks:
       - gis_centralize_db
+    volumes:
+      - shared_media:/app/media
 
   celery:
     build:
@@ -25,6 +27,8 @@ services:
       - gis_centralize_db
     depends_on:
       - redis
+    volumes:
+      - shared_media:/app/media
 
   redis:
     image: redis:7
@@ -32,6 +36,9 @@ services:
     restart: unless-stopped
     networks:
       - gis_centralize_db
+
+volumes:
+  shared_media:
 
 networks:
   gis_centralize_db:

@@ -2,17 +2,16 @@ import os
 import tempfile
 from core.celery import app
 from celery.result import AsyncResult
-from django.http import JsonResponse
-from django.http import HttpResponse, FileResponse
-from rest_framework.permissions import AllowAny
+from django.http import JsonResponse, HttpResponse, FileResponse
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 
-from .tasks import inspect_file_task, convert_to_geopackage_task
+from .tasks import process_dxf_task
 
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
-def inspect_file(request):
+def process_dxf(request):
 
     uploaded_file = request.FILES.get("file")
 
@@ -26,31 +25,7 @@ def inspect_file(request):
             temp.write(chunk)
         temp_path = temp.name
 
-    task = inspect_file_task.delay(temp_path, original_name)
-
-    return JsonResponse(
-        {"message": "Processing started", "task_id": task.id}, status=202
-    )
-
-
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def convert_to_geopackage(request):
-
-    uploaded_file = request.FILES.get("file")
-
-    if not uploaded_file:
-        return HttpResponse("No file uploaded", status=400)
-
-    original_name = uploaded_file.name
-    base_name = os.path.splitext(original_name)[0]
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".dxf") as temp:
-        for chunk in uploaded_file.chunks():
-            temp.write(chunk)
-        temp_path = temp.name
-
-    task = convert_to_geopackage_task.delay(temp_path, base_name)
+    task = process_dxf_task.delay(temp_path, original_name)
 
     return JsonResponse(
         {"message": "Processing started", "task_id": task.id}, status=202
@@ -66,10 +41,27 @@ def task_status(request, task_id):
     if result.state == "PENDING":
         return JsonResponse({"status": "pending"})
 
+    elif result.state == "PROGRESS":
+        return JsonResponse({"status": "processing", "step": result.info.get("step")})
+
     elif result.state == "SUCCESS":
-        return JsonResponse({"status": "done", "data": result.result})
+        return JsonResponse(
+            {"status": "done", "download_url": f"/jobs/download/{task_id}/"}
+        )
 
     elif result.state == "FAILURE":
-        return JsonResponse({"status": "failed"})
+        return JsonResponse({"status": "failed", "error": str(result.result)})
 
     return JsonResponse({"status": result.state})
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def download_file(request, task_id):
+
+    result = AsyncResult(task_id, app=app)
+
+    if result.state != "SUCCESS":
+        return JsonResponse({"error": "File not ready"}, status=400)
+
+    return JsonResponse({"download_url": result.result.get("file_url")})
