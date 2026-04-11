@@ -46,7 +46,7 @@ def task_status(request, task_id):
 
     elif result.state == "SUCCESS":
         return JsonResponse(
-            {"status": "done", "download_url": f"/jobs/download/{task_id}/"}
+            {"status": "done", "file_url": result.result.get("file_url")}
         )
 
     elif result.state == "FAILURE":
@@ -64,4 +64,10 @@ def download_file(request, task_id):
     if result.state != "SUCCESS":
         return JsonResponse({"error": "File not ready"}, status=400)
 
-    return JsonResponse({"download_url": result.result.get("file_url")})
+    data = result.result or {}
+    file_url = data.get("file_url")
+
+    if not file_url:
+        return JsonResponse({"error": "Missing file_url"}, status=500)
+
+    return JsonResponse({"download_url": file_url})

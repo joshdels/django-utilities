@@ -13,8 +13,12 @@ MEDIA_DIR = "/app/media/tmp"
 @shared_task(bind=True)
 def process_dxf_task(self, temp_path, original_name):
 
+    report_path = None
+    gpkg_path = None
+    zip_path = None
+
     try:
-        task_id = str(uuid.uuid4())
+        task_id = self.request.id
         os.makedirs(MEDIA_DIR, exist_ok=True)
 
         # ----------------------------
@@ -59,6 +63,9 @@ def process_dxf_task(self, temp_path, original_name):
         file_url = upload_file_to_b2(zip_path, remote_path)
 
         return {"task_id": task_id, "file_url": file_url}
+
+    except Exception as e:
+        raise RuntimeError(str(e))
 
     finally:
         for f in [temp_path, report_path, gpkg_path, zip_path]:
