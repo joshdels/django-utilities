@@ -59,18 +59,6 @@ def convert_to_geopackage(request):
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
-def download_result(request, filename):
-
-    file_path = f"media/results/{filename}"
-
-    if not os.path.exists(file_path):
-        return HttpResponse("File not ready or expired", status=404)
-
-    return FileResponse(open(file_path, "rb"))
-
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
 def task_status(request, task_id):
 
     result = AsyncResult(task_id, app=app)
