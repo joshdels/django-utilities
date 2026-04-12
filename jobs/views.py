@@ -1,15 +1,14 @@
 import os
+import uuid
 from core.celery import app
+from core.utils.converter import bytes_to_mb, bytes_to_gb
 from celery.result import AsyncResult
-from django.http import JsonResponse, HttpResponse, FileResponse
+from django.http import JsonResponse, HttpResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 
+from .models import UploadStats
 from .tasks import process_dxf_task
-
-
-import os
-import uuid
 
 
 @api_view(["POST"])
@@ -79,3 +78,20 @@ def download_file(request, task_id):
         return JsonResponse({"error": "Missing file_url"}, status=500)
 
     return JsonResponse({"download_url": file_url})
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def upload_stats(request):
+    stats = UploadStats.objects.first()
+    if not stats:
+        stats = UploadStats.objects.create()
+
+    return JsonResponse(
+        {
+            "total_files_processed": stats.total_files_processed,
+            "total_storage_processed_bytes": stats.total_storage_processed,
+            "total_storage_processed_mb": bytes_to_mb(stats.total_storage_processed),
+            "total_storage_processed_gb": bytes_to_gb(stats.total_storage_processed),
+        }
+    )

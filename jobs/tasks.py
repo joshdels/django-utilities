@@ -4,6 +4,7 @@ import zipfile
 from celery import shared_task
 from .services.dxf_inspect import run_inspection
 from .services.dxf_extract import extract_to_geopackage
+from .services.count_file_storage import count_file_storage
 from core.utils.storage import upload_file_to_b2
 
 MEDIA_DIR = "/app/media/tmp"
@@ -57,9 +58,15 @@ def process_dxf_task(self, temp_path, original_name):
         # ----------------------------
         # STEP 4: CLOUD UPLOAD
         # ----------------------------
-
+        self.update_state(state="PROGRESS", meta={"step": "Uploading to Cloud"})
         remote_path = f"processed/{task_id}.zip"
         file_url = upload_file_to_b2(zip_path, remote_path)
+
+        if not file_url:
+            raise ValueError("Upload failed")
+
+        size_bytes = os.path.getsize(zip_path)
+        count_file_storage(size_bytes)
 
         return {"task_id": task_id, "file_url": file_url}
 
