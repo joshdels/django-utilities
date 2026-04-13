@@ -98,6 +98,7 @@ INSTALLED_APPS = [
     "core",
     "api",
     "jobs",
+    "case_study",
 ]
 
 MIDDLEWARE = [
@@ -275,9 +276,12 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.AnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "user": "100/minute",
+        "anon": "10/minute",
+        "one_per_day": "1/day",
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
