@@ -4,15 +4,17 @@ from core.celery import app
 from core.utils.converter import bytes_to_mb, bytes_to_gb
 from celery.result import AsyncResult
 from django.http import JsonResponse, HttpResponse
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 
 from .models import UploadStats
 from .tasks import process_dxf_task
+from core.throttles import OnePerDayThrottle
 
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([OnePerDayThrottle])
 def process_dxf(request):
 
     uploaded_file = request.FILES.get("file")
