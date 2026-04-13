@@ -9,21 +9,23 @@ class CaseStudyBlockSerializer(serializers.ModelSerializer):
 
 
 class CaseStudyListSerializer(serializers.ModelSerializer):
-    money_tag = serializers.StringRelatedField()
+    tags = serializers.StringRelatedField(many=True)
 
     class Meta:
         model = CaseStudy
         fields = [
             "id",
             "title",
-            "main_image",
-            "money_tag",
+            "description",
+            "image",
+            "is_highlight",
+            "tags",
             "created_at",
         ]
 
 
 class CaseStudySerializer(serializers.ModelSerializer):
-    money_tag = serializers.StringRelatedField()
+    tags = serializers.StringRelatedField(many=True)
     blocks = CaseStudyBlockSerializer(many=True, read_only=True)
 
     class Meta:
@@ -32,8 +34,8 @@ class CaseStudySerializer(serializers.ModelSerializer):
             "id",
             "title",
             "description",
-            "main_image",
-            "money_tag",
+            "image",
+            "tags",
             "created_at",
             "blocks",
         ]

@@ -11,8 +11,15 @@ class CaseStudyBlockInline(admin.TabularInline):
 
 @admin.register(CaseStudy)
 class CaseStudyAdmin(admin.ModelAdmin):
-    list_display = ("title", "money_tag", "created_at")
+    list_display = ("title", "display_tags", "created_at")
     inlines = [CaseStudyBlockInline]
+
+    filter_horizontal = ("tags",)
+
+    def display_tags(self, obj):
+        return ", ".join(tag.name for tag in obj.tags.all())
+
+    display_tags.short_description = "Tags"
 
 
 @admin.register(CaseTag)
