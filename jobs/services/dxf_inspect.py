@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def get_dxf_metadata(doc, msp) -> dict:
     geodata = msp.get_geodata()
-    epsg = "N/A"
+    epsg = None
 
     if geodata:
         try:
@@ -40,7 +40,7 @@ def format_text_report(filename: str, data: dict) -> str:
         f"File Name : {filename}",
         f"File Size : {data.get('file_size_mb', 'N/A')}",
         f"Units     : {data['units']}",
-        f"Project   : {data['epsg']}",
+        f"CRS       : {data['epsg']}",
         "-" * 50,
     ]
 

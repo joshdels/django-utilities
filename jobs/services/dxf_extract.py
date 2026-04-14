@@ -68,7 +68,7 @@ def dxf_to_dataframe(doc) -> gpd.GeoDataFrame:
 def extract_to_geopackage(
     file_path: str,
     output_path: str,
-    crs: str = "EPSG:4326",
+    crs: str = None,
 ):
     logger.info("Extracting DXF to GeoPackage...")
 
@@ -80,12 +80,30 @@ def extract_to_geopackage(
     try:
         doc = ezdxf.readfile(file_path)
 
+        msp = doc.modelspace()
+        geodata = msp.get_geodata()
+        dxf_crs = None
+
+        if geodata:
+            try:
+                code, _ = geodata.get_crs()
+                if code:
+                    dxf_crs = f"EPSG:{code}"
+            except Exception:
+                dxf_crs = None
+
         gdf = dxf_to_dataframe(doc)
 
         if gdf.empty:
             raise ValueError("No valid geometry found in DXF")
 
-        gdf.set_crs(crs, inplace=True)
+        final_crs = dxf_crs or crs
+
+        if final_crs:
+            if gdf.crs is None:
+                gdf = gdf.set_crs(final_crs)
+            elif gdf.crs != final_crs:
+                logger.warning(f"CRS mismatch: {gdf.crs} vs {final_crs}")
 
         out_path = pathlib.Path(output_path)
         gdf.to_file(out_path, layer="entities", driver="GPKG")
