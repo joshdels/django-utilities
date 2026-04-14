@@ -47,7 +47,6 @@ SECRET_KEY = os.getenv("PROJECT_KEY")
 csrf_env = os.getenv("CSRF_TRUSTED_ORIGINS")
 
 if IS_PROD:
-
     CSRF_TRUSTED_ORIGINS = [url.strip() for url in csrf_env.split(",") if url.strip()]
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
@@ -56,6 +55,7 @@ if IS_PROD:
     SECURE_HSTS_SECONDS = 3600
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    USE_X_FORWARDED_HOST = True
 else:
     CORS_ALLOW_ALL_ORIGINS = True
 
@@ -328,3 +328,13 @@ LOGGING = {
 # ----------------------------
 CELERY_BROKER_URL = "redis://django-utils-redis:6379/0"
 CELERY_RESULT_BACKEND = "redis://django-utils-redis:6379/0"
+
+# ----------------------------
+# CACHE
+# ----------------------------
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://django-utils-redis:6379/1",
+    }
+}
