@@ -36,21 +36,3 @@ class ProjectSerializer(serializers.ModelSerializer):
             instance.logo = validated_data.get("logo")
         instance.save()
         return instance
-
-
-class AssetSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Asset
-        fields = "__all__"
-
-
-class NodeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Node
-        fields = "__all__"
-
-
-class LineSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Line
-        fields = "__all__"

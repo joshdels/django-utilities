@@ -34,14 +34,14 @@ class ProjectFile(models.Model):
 
 class DatasetVersion(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    version = models.IntegerField()
+    version = models.IntegerField(null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ("project", "version")
-        odering = ["-version"]
+        ordering = ["-version"]
 
     def __str__(self):
         return f"{self.project.name} v{self.version}"
@@ -70,12 +70,14 @@ class AssetType(models.Model):
 
 class Asset(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    version = models.ForeignKey(DatasetVersion, on_delete=models.CASCADE)
+    version = models.ForeignKey(
+        DatasetVersion, on_delete=models.CASCADE, null=True, blank=True
+    )
 
     global_id = models.UUIDField(unique=True, editable=False, null=True, blank=True)
     asset_type = models.ForeignKey(AssetType, on_delete=models.SET_NULL, null=True)
 
-    external_id = models.CharField(max_length=100)
+    external_id = models.CharField(max_length=100, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=50, default="active")
 
