@@ -153,11 +153,13 @@ class UploadDatasetView(APIView):
                 project=project,
                 geometry_type=geom_type,
                 defaults={
-                    "name": file_name,
                     "is_active": True,
                     "schema": {},
                 },
             )
+
+            layer.name = file_name
+            layer.save()
 
             # =========================
             # CLEAN PROPERTIES
@@ -272,7 +274,8 @@ class ProjectFeaturesView(APIView):
             return {
                 "type": "Feature",
                 "id": n.asset.external_id,
-                "geometry": n.geometry.geojson if n.geometry else None,
+                "layer": n.asset.layer.name if n.asset.layer else None,
+                "geometry": json.loads(n.geometry.geojson),
                 "properties": n.properties,
                 "elevation": n.elevation,
             }
@@ -281,7 +284,8 @@ class ProjectFeaturesView(APIView):
             return {
                 "type": "Feature",
                 "id": l.asset.external_id,
-                "geometry": l.geometry.geojson if l.geometry else None,
+                "layer": l.asset.layer.name if l.asset.layer else None,
+                "geometry": json.loads(l.geometry.geojson),
                 "start_node": l.start_node.asset.external_id if l.start_node else None,
                 "end_node": l.end_node.asset.external_id if l.end_node else None,
                 "properties": l.properties,
@@ -291,7 +295,8 @@ class ProjectFeaturesView(APIView):
             return {
                 "type": "Feature",
                 "id": a.asset.external_id,
-                "geometry": a.geometry.geojson if a.geometry else None,
+                "layer": a.asset.layer.name if a.asset.layer else None,
+                "geometry": json.loads(a.geometry.geojson),
                 "area_type": a.area_type,
                 "properties": a.properties,
             }

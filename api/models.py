@@ -53,6 +53,10 @@ class Layer(models.Model):
         Project, on_delete=models.CASCADE, related_name="layers"
     )
 
+    dataset_version = models.ForeignKey(
+        DatasetVersion, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
     name = models.CharField(max_length=100)
     geometry_type = models.CharField(
         max_length=50,
@@ -68,7 +72,7 @@ class Layer(models.Model):
     schema = models.JSONField(default=dict)
 
     class Meta:
-        unique_together = ("project", "name")
+        unique_together = ("project", "name", "dataset_version")
 
     def __str__(self):
         return f"{self.name} ({self.project.name})"
@@ -83,7 +87,7 @@ class Asset(models.Model):
     global_id = models.UUIDField(
         default=uuid.uuid4, editable=False, null=True, blank=True
     )
-    layer = models.ForeignKey(Layer, on_delete=models.PROTECT, null=True)
+    layer = models.ForeignKey(Layer, on_delete=models.CASCADE)
 
     external_id = models.CharField(max_length=100, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True)

@@ -2,9 +2,23 @@ from django.contrib import admin
 from .models import Project, ProjectFile, DatasetVersion, Layer
 
 
+class LayerInline(admin.TabularInline):
+    model = Layer
+    extra = 0
+    fields = ("name", "geometry_type", "is_active", "dataset_version")
+    readonly_fields = ()
+
+
+class ProjectFileInline(admin.TabularInline):
+    model = ProjectFile
+    extra = 0
+    fields = ("name", "file")
+
+
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "owner", "current_version", "created_at")
+    inlines = [LayerInline, ProjectFileInline]
 
 
 @admin.register(ProjectFile)
