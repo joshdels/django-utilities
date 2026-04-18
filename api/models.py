@@ -1,3 +1,4 @@
+import uuid
 from django.contrib.gis.db import models
 from django.contrib.auth.models import User
 
@@ -47,9 +48,9 @@ class DatasetVersion(models.Model):
         return f"{self.project.name} v{self.version}"
 
 
-class AssetType(models.Model):
+class Layer(models.Model):
     project = models.ForeignKey(
-        Project, on_delete=models.CASCADE, related_name="asset_types"
+        Project, on_delete=models.CASCADE, related_name="layers"
     )
 
     name = models.CharField(max_length=100)
@@ -62,7 +63,12 @@ class AssetType(models.Model):
         ],
     )
 
+    is_active = models.BooleanField(default=True)
+
     schema = models.JSONField(default=dict)
+
+    class Meta:
+        unique_together = ("project", "name")
 
     def __str__(self):
         return f"{self.name} ({self.project.name})"
@@ -74,8 +80,10 @@ class Asset(models.Model):
         DatasetVersion, on_delete=models.CASCADE, null=True, blank=True
     )
 
-    global_id = models.UUIDField(unique=True, editable=False, null=True, blank=True)
-    asset_type = models.ForeignKey(AssetType, on_delete=models.SET_NULL, null=True)
+    global_id = models.UUIDField(
+        default=uuid.uuid4, editable=False, null=True, blank=True
+    )
+    layer = models.ForeignKey(Layer, on_delete=models.PROTECT, null=True)
 
     external_id = models.CharField(max_length=100, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True)
@@ -85,6 +93,7 @@ class Asset(models.Model):
         indexes = [
             models.Index(fields=["project", "version"]),
             models.Index(fields=["external_id"]),
+            models.Index(fields=["layer"]),
         ]
 
     def __str__(self):

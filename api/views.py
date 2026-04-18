@@ -2,6 +2,8 @@ from django.contrib.gis.geos import GEOSGeometry
 import geopandas as gpd
 import pandas as pd
 import uuid
+import json
+import os
 
 from rest_framework import viewsets
 from rest_framework import status
@@ -21,7 +23,7 @@ from .models import (
     Project,
     DatasetVersion,
     Asset,
-    AssetType,
+    Layer,
     Node,
     Line,
     Area,
@@ -39,6 +41,29 @@ class ProjectViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 
 
+class UploadStatusView(APIView):
+
+    def get(self, request, project_id):
+
+        project = get_object_or_404(Project, id=project_id)
+
+        versions = DatasetVersion.objects.filter(project=project)
+
+        return Response(
+            {
+                "project": project.id,
+                "versions": [
+                    {
+                        "version": v.version,
+                        "is_active": v.is_active,
+                        "asset_count": Asset.objects.filter(version=v).count(),
+                    }
+                    for v in versions
+                ],
+            }
+        )
+
+
 class UploadDatasetView(APIView):
     """
     POST:
@@ -48,7 +73,10 @@ class UploadDatasetView(APIView):
 
     @transaction.atomic
     def post(self, request):
+
         file = request.FILES.get("file")
+
+        file_name = os.path.splitext(file.name)[0]
         project_id = request.data.get("project_id")
 
         if not file:
@@ -58,12 +86,12 @@ class UploadDatasetView(APIView):
             return Response({"error": "project_id is required"}, status=400)
 
         # =========================
-        # GET PROJECT
+        # PROJECT
         # =========================
         project = get_object_or_404(Project, id=project_id)
 
         # =========================
-        # CREATE VERSION
+        # VERSIONING
         # =========================
         last_version = (
             DatasetVersion.objects.filter(project=project).order_by("-version").first()
@@ -92,7 +120,7 @@ class UploadDatasetView(APIView):
             gdf = gpd.read_file(file)
         except Exception as e:
             return Response(
-                {"error": "Invalid GeoJSON / file format", "details": str(e)},
+                {"error": "Invalid GeoJSON", "details": str(e)},
                 status=400,
             )
 
@@ -102,37 +130,34 @@ class UploadDatasetView(APIView):
         # PROCESS FEATURES
         # =========================
         for _, row in gdf.iterrows():
+
             geom = row.geometry
 
             if geom is None or geom.is_empty:
                 continue
 
+            # =========================
+            # NORMALIZE GEOMETRY TYPE
+            # =========================
             geom_type = geom.geom_type
 
-            # =========================
-            # FLATTEN MULTI-GEOMETRIES
-            # =========================
-            if geom_type == "MultiPoint":
-                geoms = list(geom.geoms)
-                geom_type = "Point"
+            if geom_type.startswith("Multi"):
+                geom_type = geom_type.replace("Multi", "")
 
-            elif geom_type == "MultiLineString":
-                geoms = list(geom.geoms)
-                geom_type = "LineString"
-
-            elif geom_type == "MultiPolygon":
-                geoms = list(geom.geoms)
-                geom_type = "Polygon"
-
-            else:
-                geoms = [geom]
+            geoms = list(geom.geoms) if hasattr(geom, "geoms") else [geom]
 
             # =========================
-            # MATCH ASSET TYPE
+            # AUTO-CREATE / GET LAYER
             # =========================
-            asset_type = AssetType.objects.filter(
-                project=project, geometry_type=geom_type
-            ).first()
+            layer, created = Layer.objects.get_or_create(
+                project=project,
+                geometry_type=geom_type,
+                defaults={
+                    "name": file_name,
+                    "is_active": True,
+                    "schema": {},
+                },
+            )
 
             # =========================
             # CLEAN PROPERTIES
@@ -149,7 +174,7 @@ class UploadDatasetView(APIView):
             asset = Asset.objects.create(
                 project=project,
                 version=version,
-                asset_type=asset_type,
+                layer=layer,
                 global_id=uuid.uuid4(),
                 external_id=str(row.get("id", uuid.uuid4())),
                 name=str(row.get("name", "")),
@@ -157,11 +182,10 @@ class UploadDatasetView(APIView):
             )
 
             # =========================
-            # SAVE GEOMETRIES (IMPORTANT FIX HERE)
+            # SAVE GEOMETRY
             # =========================
             for g in geoms:
 
-                # 🔥 CRITICAL FIX: convert Shapely → GEOSGeometry
                 django_geom = GEOSGeometry(g.wkt, srid=4326)
 
                 if geom_type == "Point":
@@ -203,91 +227,99 @@ class ProjectFeaturesView(APIView):
 
     def get(self, request, project_id):
 
-        # SAFE FETCH
+        # =========================
+        # PROJECT
+        # =========================
         project = get_object_or_404(Project, id=project_id)
-        version = project.current_version
+
+        # =========================
+        # VERSION (OPTIONAL)
+        # =========================
+        version_id = request.query_params.get("version")
+
+        if version_id:
+            version = get_object_or_404(DatasetVersion, id=version_id, project=project)
+        else:
+            version = project.current_version
 
         if not version:
             return Response({"error": "No active version found"}, status=400)
 
         # =========================
-        # NODES
+        # OPTIONAL FILTERS
         # =========================
-        nodes = Node.objects.filter(asset__project=project, asset__version=version)
+        active_only = request.query_params.get("active", "false").lower() == "true"
+        layer_name = request.query_params.get("layer")
 
-        node_data = [
-            {
+        base_filter = {
+            "asset__project": project,
+        }
+
+        # ONLY lock version if explicitly requested (ArcGIS-style)
+        if version_id:
+            base_filter["asset__version"] = version
+
+        if active_only:
+            base_filter["asset__layer__is_active"] = True
+
+        if layer_name:
+            base_filter["asset__layer__name"] = layer_name
+
+        # =========================
+        # QUERY HELPERS
+        # =========================
+        def build_node(n):
+            return {
+                "type": "Feature",
                 "id": n.asset.external_id,
-                "name": n.asset.name,
                 "geometry": n.geometry.geojson if n.geometry else None,
                 "properties": n.properties,
                 "elevation": n.elevation,
             }
-            for n in nodes
-        ]
 
-        # =========================
-        # LINES
-        # =========================
-        lines = Line.objects.filter(asset__project=project, asset__version=version)
-
-        line_data = [
-            {
+        def build_line(l):
+            return {
+                "type": "Feature",
                 "id": l.asset.external_id,
-                "name": l.asset.name,
                 "geometry": l.geometry.geojson if l.geometry else None,
                 "start_node": l.start_node.asset.external_id if l.start_node else None,
                 "end_node": l.end_node.asset.external_id if l.end_node else None,
                 "properties": l.properties,
             }
-            for l in lines
-        ]
 
-        # =========================
-        # AREAS
-        # =========================
-        areas = Area.objects.filter(asset__project=project, asset__version=version)
-
-        area_data = [
-            {
+        def build_area(a):
+            return {
+                "type": "Feature",
                 "id": a.asset.external_id,
-                "name": a.name,
                 "geometry": a.geometry.geojson if a.geometry else None,
                 "area_type": a.area_type,
                 "properties": a.properties,
             }
-            for a in areas
-        ]
 
+        # =========================
+        # QUERIES
+        # =========================
+        nodes = Node.objects.filter(**base_filter)
+        lines = Line.objects.filter(**base_filter)
+        areas = Area.objects.filter(**base_filter)
+
+        # =========================
+        # RESPONSE (ArcGIS-style FeatureSet)
+        # =========================
         return Response(
             {
+                "type": "FeatureCollection",
                 "project": project.id,
-                "version": version.version,
-                "nodes": node_data,
-                "lines": line_data,
-                "areas": area_data,
-            }
-        )
-
-
-class UploadStatusView(APIView):
-
-    def get(self, request, project_id):
-
-        project = get_object_or_404(Project, id=project_id)
-
-        versions = DatasetVersion.objects.filter(project=project)
-
-        return Response(
-            {
-                "project": project.id,
-                "versions": [
-                    {
-                        "version": v.version,
-                        "is_active": v.is_active,
-                        "asset_count": Asset.objects.filter(version=v).count(),
-                    }
-                    for v in versions
-                ],
+                "version": version.version if version else None,
+                "query": {
+                    "version_locked": version_id is not None,
+                    "active": active_only,
+                    "layer": layer_name,
+                },
+                "features": {
+                    "nodes": [build_node(n) for n in nodes],
+                    "lines": [build_line(l) for l in lines],
+                    "areas": [build_area(a) for a in areas],
+                },
             }
         )

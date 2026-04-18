@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Project, ProjectFile, DatasetVersion
+from .models import Project, ProjectFile, DatasetVersion, Layer
 
 
 @admin.register(Project)
@@ -21,3 +21,12 @@ class DatasetVersionAdmin(admin.ModelAdmin):
         return obj.asset_set.count()
 
     asset_count.short_description = "Assets"
+
+
+@admin.register(Layer)
+class LayerAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "project", "geometry_type", "is_active")
+    list_filter = ("project", "is_active", "geometry_type")
+    search_fields = ("name", "project__name")
+    list_editable = ("is_active",)
+    ordering = ("project", "name")
